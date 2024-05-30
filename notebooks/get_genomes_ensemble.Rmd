@@ -1,0 +1,108 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r, setup}
+knitr::opts_chunk$set(engine.opts = "-i")
+```
+
+
+```{r}
+library(tidyverse)
+```
+
+# Data prepatation
+
+## dowloading genome anootation from EnesemleFungi
+```{bash}
+wget https://ftp.ebi.ac.uk/ensemblgenomes/pub/current/fungi/species_EnsemblFungi.txt
+```
+```{r}
+metadata <- read_tsv("species_EnsemblFungi.txt")
+metadata %>% distinct(genebuild)
+
+
+metadata %>% 
+  filter(grepl("DOE", genebuild)) -> filtered
+  
+
+
+  filter(grepl("fungi_ascomycota5_collection", core_db)) -> filtered
+
+#link examples
+#https://ftp.ebi.ac.uk/ensemblgenomes/pub/release-56/fungi/gff3/fungi_ascomycota3_collection/aspergillus_ochraceoroseus_ibt_24754_gca_002846915//Aspergillus_ochraceoroseus_ibt_24754_gca_002846915.Aspergillus_ochraceoroseus_IBT_24754_v1.1.56.gff3.gz
+#https://ftp.ebi.ac.uk/ensemblgenomes/pub/release-56/fungi/fasta/fungi_ascomycota3_collection/aspergillus_ochraceoroseus_ibt_24754_gca_002846915/dna/Aspergillus_ochraceoroseus_ibt_24754_gca_002846915.Aspergillus_ochraceoroseus_IBT_24754_v1.1.dna.toplevel.fa.gz
+
+#https://ftp.ebi.ac.uk/ensemblgenomes/pub/release-59/fungi/gff3/fungi_basidiomycota1_collection/armillaria_solidipes_gca_002307675/Armillaria_solidipes_gca_002307675.Armost1.59.gff3.gz
+
+#https://ftp.ebi.ac.uk/ensemblgenomes/pub/release-59/fungi/gff3/fungi_basidiomycota1_collection_core_59_112_1/acaromyces_ingoldii_gca_003144295/Acaromyces_ingoldii_gca_003144295.Acain1.59.gff3.gz
+  
+link = "https://ftp.ebi.ac.uk/ensemblgenomes/pub/release-59/fungi"
+collection = "fungi_ascomycota5_collection" 
+format = "gff3"
+
+filtered %>%
+  mutate(collection = str_remove(core_db, "_core_59_112_1")) %>%
+  mutate(assemly_mut = str_replace_all(string = assembly, pattern = " ", replacement = "_")) %>%
+  mutate(species_mut = str_to_sentence(species)) %>%
+  mutate(url_gff = paste(link, "gff3", collection, species, paste(species_mut, assemly_mut, "59.gff3.gz", sep = "."), sep = "/")) %>% 
+  mutate(url_fasta = paste(link, "fasta", collection, species, "dna", paste(species_mut, assemly_mut, "dna.toplevel.fa.gz", sep = "."), sep = "/")) %>% 
+  select(url_gff, url_fasta) -> urls
+
+urls
+
+urls %>% select(url_gff) %>% write_delim(file = "url_gff", col_names = FALSE)
+urls %>% select(url_fasta) %>% write_delim(file = "url_fasta", col_names = FALSE)
+
+```
+
+```{bash}
+#if [ -d gff ]; then rm -Rf gff; fi #uncomment if you want to delete exisigin files
+#if [ -d fasta ]; then rm -Rf fasta; fi #uncomment if you want to delete exisigin files
+
+mkdir -p fasta_dna
+mkdir -p gff
+ls -la
+```
+```{bash, include=FALSE}
+wget -P gff -i url_gff
+```
+
+```{bash, message='hide'}
+wget -P fasta_dna -i url_fasta
+```
+
+```{bash}
+gunzip gff/*
+gunzip fasta_dna/*
+```
+
+
+
+## Example of using AGAT tool to extract genomic features
+look at the documentation : https://agat.readthedocs.io/en/latest/tools/agat_sp_extract_sequences.html#
+install using: conda install -c bioconda agat
+
+![A](https://agat.readthedocs.io/en/latest/_images/agat_sp_extract_sequences_2.png "AGAT tool"){width=200%, height=150%}
+![A](https://agat.readthedocs.io/en/latest/_images/agat_sp_extract_sequences_1.png "AGAT tool"){width=300%}
+
+this is just an example, how to do bash/shell commands within R notebooks, you can do it entirely in bash or evoking python scripting. I suggest you before running a loop for all genomes, figure out for 1 case that you are extracting correct regions, try to have a simple simulation example, make sure you are in control of what you do. 
+For ML model predictions you will need to prepare: 
+ - a promoter sequence (upstream of 5'UTR, that would be a yellow intergenic1 region). The exact number of how many nucleotides you need, you will find out in the dataset/method section that I've asked you to run from the paper repository.
+ - 5'UTR region, make sure when extracting it you are extracting only 5'UTR and no other regions, play widh different options of AGAT tool
+ - CDS region, from this example you will later calculate features that you want to extract, that is 64 CODON counts, bacially 3mer counts. The example of how to extract DNA CDS from all genomes is in the code block bellow.
+ - 3'UTR, same applies as for 5'.
+ - terminator region, same as for promoter, except intergrenic2 region as on a figure.
+ 
+```{bash}
+my_features="CDS_2"
+mkdir -p $my_features #make directory where you want to save your features
+conda activate genomics #activate conda genomics environment with agat tool
+
+for FILE in gff/*; do dna_file=`basename $FILE| sed "s/.56.gff3$/.dna.toplevel.fa/"`;  agat_sp_extract_sequences.pl -g $FILE -f fasta_dna/$dna_file -t cds -o $my_features/${dna_file}.${my_features};  done;
+pwd
+```
+

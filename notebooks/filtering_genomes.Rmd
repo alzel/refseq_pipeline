@@ -1,0 +1,78 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+
+```{r dir_set}
+# automatically set working directory to the directory of the current file
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F,
+                      warning = F,
+                      message = F)
+```
+
+```{r}
+library(tidyverse)
+
+```
+
+```{bash, message= False}
+wget -O ../tmp/assembly_summary_refseq.txt https://ftp.ncbi.nlm.nih.gov/genomes/ASSEMBLY_REPORTS/assembly_summary_refseq.txt
+
+```
+
+
+```{r}
+assembly_summary <- read_tsv("../tmp/assembly_summary_refseq.txt", comment = "##") %>%
+  rename(assembly_accession = `#assembly_accession`) -> assembly_summary
+assembly_summary %>% mutate(genome = paste(assembly_accession, str_replace_all(asm_name, "\\s+", "_"), sep = "_")) -> assembly_summary
+
+```
+
+
+```{r}
+assembly_summary %>% group_by(annotation_provider, group) %>% count %>% arrange(-n)
+```
+
+
+```{r}
+assembly_summary %>% filter(annotation_provider %in% c("NCBI RefSeq", "DOE Joint Genome Institute", "Broad Institute", "Aalborg University", "JGI", "Cornell University", "Uppsala University" ), group == "fungi") %>% 
+  select(assembly_accession, genome, ftp_path, group)  %>%
+  write_csv("../config/links_fungi_all.csv")
+```
+
+```{r}
+
+assembly_summary %>% filter(annotation_provider %in% c("NCBI RefSeq"), group == "vertebrate_mammalian") %>% 
+  select(assembly_accession, genome, ftp_path, group)  %>%
+  write_csv("../config/links_vertebrate_mammalian_all.csv")
+
+```
+
+```{r}
+assembly_summary %>% filter(annotation_provider %in% c("NCBI RefSeq"), group == "plant") %>% 
+  select(assembly_accession, genome, ftp_path, group)  %>%
+  write_csv("../config/links_plant_all.csv")
+
+
+```
+
+```{r}
+
+assembly_summary %>% filter(group == "bacteria") %>% 
+  select(assembly_accession, genome, ftp_path, group)  %>%
+  write_csv("../config/links_bacteria_all.csv")
+
+assembly_summary %>% filter(group == "archaea") %>% 
+  select(assembly_accession, genome, ftp_path, group)  %>%
+  write_csv("../config/links_archaea_all.csv")
+
+
+```
+

@@ -1,4 +1,135 @@
-# Main entrypoint of the workflow. 
-# Please follow the best practices: 
-# https://snakemake.readthedocs.io/en/stable/snakefiles/best_practices.html,
-# in particular regarding the standardized folder structure mentioned there. 
+import pandas as pd
+import os.path
+
+from pathlib import Path
+
+Path("./logs").mkdir(parents=True, exist_ok=True)
+configfile: "config/config.yaml"
+OUTPUT_DIR = config["output_dir"]
+
+CWD = os.popen("pwd").read().rstrip() # Get the current working directory (works with MacOS weird shortcut paths)
+print(CWD)
+# Read the links from a pandas DataFrame
+df = pd.read_csv(config["genomes"])
+
+# Print the DataFrame to check its contents
+print("DataFrame contents:")
+print(df)
+
+# Function to get the ftp link for a specific genome
+def get_ftp_link(genome, filetype):
+    ftp_link = df[df["genome"] == genome]["ftp_path"].values[0] + "/" + genome + f"_{filetype}.gz"
+    print(f"FTP link for genome {genome} ({filetype}): {ftp_link}")  # Debug print
+    return ftp_link
+
+
+# Create a list of input files for both genomic and gff
+genomic_files = [os.path.join(OUTPUT_DIR, "{genome}/{genome}_genomic.fna.gz").format(genome=genome) for genome in df["genome"]]
+gff_files = [os.path.join(OUTPUT_DIR, "{genome}/{genome}_genomic.gff.gz").format(genome=genome) for genome in df["genome"]]
+
+promoter_files = []
+parts = list(config["agat"]["extract_sequences"].keys())
+parts.remove("reference_feature")
+ref_feature = config["agat"]["extract_sequences"]["reference_feature"]
+
+for genome in df["genome"]:
+    for part in parts:
+        if part:
+            promoter_files.append(os.path.join(OUTPUT_DIR, "{genome}/{genome}_{ref_feature}.{part}.fa").format(genome=genome, ref_feature=ref_feature, part=part))
+
+#promoter_files = [os.path.join(OUTPUT_DIR, "{genome}/{genome}_promoters.fa").format(genome=genome) for genome in df["genome"]]
+
+
+# Print the list of input files to debug
+print("List of genomic files:")
+for file in genomic_files:
+    print(file)
+
+print("List of gff files:")
+for file in gff_files:
+    print(file)
+
+print("List of promoter files:")
+for file in promoter_files:
+    print(file)
+
+
+# Define the rule to download the files
+rule all:
+     input:
+        genomic_files + gff_files + promoter_files
+
+# Define the rule to download genomic files
+rule download_genomic:
+    params:
+        link=lambda wildcards: get_ftp_link(wildcards.genome, "genomic.fna")
+    output:
+         "{OUTPUT_DIR}/{genome}/{genome}_genomic.fna.gz"
+    resources:
+        download=1
+    shell:
+        "wget {params.link} -O {output}"
+
+# Define the rule to download gff files
+rule download_gff:
+    params:
+        link=lambda wildcards: get_ftp_link(wildcards.genome, "genomic.gff")
+    output:
+        "{OUTPUT_DIR}/{genome}/{genome}_genomic.gff.gz"
+    resources:
+        download=1
+    shell:
+        "wget {params.link} -O {output}"
+
+rule gunzip:
+    input:
+        "{OUTPUT_DIR}/{genome}/{genome}_genomic.fna.gz",
+        "{OUTPUT_DIR}/{genome}/{genome}_genomic.gff.gz"
+    output:
+        temp("{OUTPUT_DIR}/{genome}/{genome}_genomic.fna"),
+        temp("{OUTPUT_DIR}/{genome}/{genome}_genomic.gff")
+    shell:
+        "gunzip -k {input}"
+
+
+# Define the rule to fix GFF files using AGAT
+rule fix_gff:
+    input:
+        gff="{OUTPUT_DIR}/{genome}/{genome}_genomic.gff"
+    output:
+        fixed_gff="{OUTPUT_DIR}/{genome}/{genome}_fixed.gff"
+    params:
+        docker=config["agat"]["docker"],
+        dockervol = "/data"
+    shell:
+        """
+        docker run -v $(pwd):{params.dockervol} {params.docker} \
+        agat_convert_sp_gff2gtf.pl --gff {params.dockervol}/{input.gff} --out {params.dockervol}/{output.fixed_gff}
+        """
+    
+
+# Define the rule to extract promoters using AGAT
+rule extract_seqs:
+    input:
+        gff="{OUTPUT_DIR}/{genome}/{genome}_fixed.gff",
+        fna="{OUTPUT_DIR}/{genome}/{genome}_genomic.fna"
+    output:
+        file="{OUTPUT_DIR}/{genome}/{genome}_{ref_feature}.{part}.fa"
+    params:
+        docker=config["agat"]["docker"],
+        dockervol = "/data",
+    run:
+        c = ""
+        match wildcards.part:
+                case "upstream":
+                    c = f"docker run -v {CWD}:{params.dockervol} {params.docker} agat_sp_extract_sequences.pl --gff {params.dockervol}/{input.gff} --fasta {params.dockervol}/{input.fna}  --type {ref_feature} -eo --upstream {config['agat']['extract_sequences']['upstream']} --out {params.dockervol}/{OUTPUT_DIR}/{genome}/{genome}_{ref_feature}.{wildcards.part}.fa"
+                    
+                case "downstream":
+                    c = f"docker run -v {CWD}:{params.dockervol} {params.docker} agat_sp_extract_sequences.pl --gff {params.dockervol}/{input.gff} --fasta {params.dockervol}/{input.fna}  --type {ref_feature} -eo --downstream {config['agat']['extract_sequences']['downstream']} --out {params.dockervol}/{OUTPUT_DIR}/{genome}/{genome}_{ref_feature}.{wildcards.part}.fa" 
+                    
+                case "five_prime_UTR":
+                    c = f"docker run -v {CWD}:{params.dockervol} {params.docker} agat_sp_extract_sequences.pl --gff {params.dockervol}/{input.gff} --fasta {params.dockervol}/{input.fna}  --type {wildcards.part} --out {params.dockervol}/{OUTPUT_DIR}/{genome}/{genome}_{ref_feature}.{wildcards.part}.fa"
+                    
+                case "three_prime_UTR":
+                    c = f"docker run -v {CWD}:{params.dockervol} {params.docker} agat_sp_extract_sequences.pl --gff {params.dockervol}/{input.gff} --fasta {params.dockervol}/{input.fna}  --type {wildcards.part} --out {params.dockervol}/{OUTPUT_DIR}/{genome}/{genome}_{ref_feature}.{wildcards.part}.fa"
+        shell(c)  
