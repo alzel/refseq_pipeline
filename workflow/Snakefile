@@ -37,6 +37,7 @@ for genome in df["genome"]:
         if part:
             promoter_files.append(os.path.join(OUTPUT_DIR, "{genome}/{genome}_{ref_feature}.{part}.fa").format(genome=genome, ref_feature=ref_feature, part=part))
 
+
 #promoter_files = [os.path.join(OUTPUT_DIR, "{genome}/{genome}_promoters.fa").format(genome=genome) for genome in df["genome"]]
 
 
@@ -131,5 +132,8 @@ rule extract_seqs:
                     c = f"docker run -v {CWD}:{params.dockervol} {params.docker} agat_sp_extract_sequences.pl --gff {params.dockervol}/{input.gff} --fasta {params.dockervol}/{input.fna}  --type {wildcards.part} --out {params.dockervol}/{OUTPUT_DIR}/{genome}/{genome}_{ref_feature}.{wildcards.part}.fa"
                     
                 case "three_prime_UTR":
+                    c = f"docker run -v {CWD}:{params.dockervol} {params.docker} agat_sp_extract_sequences.pl --gff {params.dockervol}/{input.gff} --fasta {params.dockervol}/{input.fna}  --type {wildcards.part} --out {params.dockervol}/{OUTPUT_DIR}/{genome}/{genome}_{ref_feature}.{wildcards.part}.fa"
+                
+                case "CDS":
                     c = f"docker run -v {CWD}:{params.dockervol} {params.docker} agat_sp_extract_sequences.pl --gff {params.dockervol}/{input.gff} --fasta {params.dockervol}/{input.fna}  --type {wildcards.part} --out {params.dockervol}/{OUTPUT_DIR}/{genome}/{genome}_{ref_feature}.{wildcards.part}.fa"
         shell(c)  
