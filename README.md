@@ -7,6 +7,8 @@
 A Snakemake workflow for `<description>`
 
 
+
+
 ## Usage
 
 The usage of this workflow is described in the [Snakemake Workflow Catalog](https://snakemake.github.io/snakemake-workflow-catalog/?usage=<owner>%2F<repo>).

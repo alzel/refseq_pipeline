@@ -102,14 +102,15 @@ rule fix_gff:
     params:
         docker=config["agat"]["docker"],
         dockervol = "/data"
+    singularity:
+        config["agat"]["singularity"]
     shell:
         """
-        docker run -v $(pwd):{params.dockervol} {params.docker} \
-        agat_convert_sp_gff2gtf.pl --gff {params.dockervol}/{input.gff} --out {params.dockervol}/{output.fixed_gff}
+        agat_convert_sp_gff2gtf.pl --gff {input.gff} --out {output.fixed_gff}
         """
     
 
-# Define the rule to extract promoters using AGAT
+# extracting regions using AGAT
 rule extract_seqs:
     input:
         gff="{OUTPUT_DIR}/{genome}/{genome}_fixed.gff",
@@ -119,21 +120,26 @@ rule extract_seqs:
     params:
         docker=config["agat"]["docker"],
         dockervol = "/data",
+        singularity=config["agat"]["singularity"]
+    
     run:
         c = ""
         match wildcards.part:
                 case "upstream":
-                    c = f"docker run -v {CWD}:{params.dockervol} {params.docker} agat_sp_extract_sequences.pl --gff {params.dockervol}/{input.gff} --fasta {params.dockervol}/{input.fna}  --type {ref_feature} -eo --upstream {config['agat']['extract_sequences']['upstream']} --out {params.dockervol}/{OUTPUT_DIR}/{genome}/{genome}_{ref_feature}.{wildcards.part}.fa"
-                    
+                    #c = f"docker run -v {CWD}:{params.dockervol} {params.docker} agat_sp_extract_sequences.pl --gff {params.dockervol}/{input.gff} --fasta {params.dockervol}/{input.fna}  --type {ref_feature} -eo --upstream {config['agat']['extract_sequences']['upstream']} --out {params.dockervol}/{OUTPUT_DIR}/{genome}/{genome}_{ref_feature}.{wildcards.part}.fa"
+                    c = f"singularity exec {params.singularity} agat_sp_extract_sequences.pl --gff {input.gff} --fasta {input.fna}  --type {ref_feature} -eo --upstream {config['agat']['extract_sequences']['upstream']} --out {OUTPUT_DIR}/{genome}/{genome}_{ref_feature}.{wildcards.part}.fa"
                 case "downstream":
-                    c = f"docker run -v {CWD}:{params.dockervol} {params.docker} agat_sp_extract_sequences.pl --gff {params.dockervol}/{input.gff} --fasta {params.dockervol}/{input.fna}  --type {ref_feature} -eo --downstream {config['agat']['extract_sequences']['downstream']} --out {params.dockervol}/{OUTPUT_DIR}/{genome}/{genome}_{ref_feature}.{wildcards.part}.fa" 
-                    
+                    #c = f"docker run -v {CWD}:{params.dockervol} {params.docker} agat_sp_extract_sequences.pl --gff {params.dockervol}/{input.gff} --fasta {params.dockervol}/{input.fna}  --type {ref_feature} -eo --downstream {config['agat']['extract_sequences']['downstream']} --out {params.dockervol}/{OUTPUT_DIR}/{genome}/{genome}_{ref_feature}.{wildcards.part}.fa" 
+                    c = f"singularity exec {params.singularity} agat_sp_extract_sequences.pl --gff {input.gff} --fasta {input.fna} --type {ref_feature} -eo --downstream {config['agat']['extract_sequences']['downstream']} --out {OUTPUT_DIR}/{genome}/{genome}_{ref_feature}.{wildcards.part}.fa" 
                 case "five_prime_UTR":
-                    c = f"docker run -v {CWD}:{params.dockervol} {params.docker} agat_sp_extract_sequences.pl --gff {params.dockervol}/{input.gff} --fasta {params.dockervol}/{input.fna}  --type {wildcards.part} --out {params.dockervol}/{OUTPUT_DIR}/{genome}/{genome}_{ref_feature}.{wildcards.part}.fa"
-                    
+                    #c = f"docker run -v {CWD}:{params.dockervol} {params.docker} agat_sp_extract_sequences.pl --gff {params.dockervol}/{input.gff} --fasta {params.dockervol}/{input.fna}  --type {wildcards.part} --out {params.dockervol}/{OUTPUT_DIR}/{genome}/{genome}_{ref_feature}.{wildcards.part}.fa"
+                    c = f"singularity exec {params.singularity} agat_sp_extract_sequences.pl --gff {input.gff} --fasta {input.fna} --type {wildcards.part} --out {OUTPUT_DIR}/{genome}/{genome}_{ref_feature}.{wildcards.part}.fa"
                 case "three_prime_UTR":
-                    c = f"docker run -v {CWD}:{params.dockervol} {params.docker} agat_sp_extract_sequences.pl --gff {params.dockervol}/{input.gff} --fasta {params.dockervol}/{input.fna}  --type {wildcards.part} --out {params.dockervol}/{OUTPUT_DIR}/{genome}/{genome}_{ref_feature}.{wildcards.part}.fa"
-                
+                    #c = f"docker run -v {CWD}:{params.dockervol} {params.docker} agat_sp_extract_sequences.pl --gff {params.dockervol}/{input.gff} --fasta {params.dockervol}/{input.fna}  --type {wildcards.part} --out {params.dockervol}/{OUTPUT_DIR}/{genome}/{genome}_{ref_feature}.{wildcards.part}.fa"
+                    c = f"singularity exec {params.singularity} agat_sp_extract_sequences.pl --gff {input.gff} --fasta {input.fna} --type {wildcards.part} --out {OUTPUT_DIR}/{genome}/{genome}_{ref_feature}.{wildcards.part}.fa"
                 case "CDS":
-                    c = f"docker run -v {CWD}:{params.dockervol} {params.docker} agat_sp_extract_sequences.pl --gff {params.dockervol}/{input.gff} --fasta {params.dockervol}/{input.fna}  --type {wildcards.part} --out {params.dockervol}/{OUTPUT_DIR}/{genome}/{genome}_{ref_feature}.{wildcards.part}.fa"
+                    #c = f"docker run -v {CWD}:{params.dockervol} {params.docker} agat_sp_extract_sequences.pl --gff {params.dockervol}/{input.gff} --fasta {params.dockervol}/{input.fna}  --type {wildcards.part} --out {params.dockervol}/{OUTPUT_DIR}/{genome}/{genome}_{ref_feature}.{wildcards.part}.fa"
+                    c = f"singularity exec {params.singularity} agat_sp_extract_sequences.pl --gff {input.gff} --fasta {input.fna} --type {wildcards.part} --out {OUTPUT_DIR}/{genome}/{genome}_{ref_feature}.{wildcards.part}.fa"
         shell(c)  
+
+
