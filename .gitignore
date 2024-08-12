@@ -5,3 +5,8 @@ logs/**
 .snakemake/**
 .Rproj.user
 *.csv
+tmp/**
+*.Rproj
+*.Rproj.user
+*.Rproj.user/**
+
