@@ -3,7 +3,7 @@ import glob
 from Bio import SeqIO
 
 
-parser = argparse.ArgumentParser(description='Merge and filter FASTA files.')
+parser = argparse.ArgumentParser(description='Outputs only common records from FASTA files.')
 parser.add_argument('filenames', nargs='+', help='Input FASTA files')
 parser.add_argument('--suffix', type=str, default="filtered", help='file suffix')
 
@@ -35,7 +35,7 @@ def filter_common_fasta_files(filenames):
                 common_ids = current_ids
             
     common_ids = list(common_ids)
-    print(common_ids)
+    #print(common_ids)
     
     for filename in filenames:
         with open(filename, 'r') as file:
@@ -47,7 +47,7 @@ def filter_common_fasta_files(filenames):
                     current_sequences[current_id] = record
                 
             index_map = {v: i for i, v in enumerate(common_ids)}
-            print("index map", (index_map))
+            #print("index map", (index_map))
             current_sequences = dict(sorted(current_sequences.items(), key=lambda pair: index_map[pair[0]]))
                 
             SeqIO.write(current_sequences.values(), f'{filename}_{args.suffix}', "fasta")

@@ -27,7 +27,7 @@ def get_ftp_link(genome, filetype):
 genomic_files = [os.path.join(OUTPUT_DIR, "{genome}/{genome}_genomic.fna.gz").format(genome=genome) for genome in df["genome"]]
 gff_files = [os.path.join(OUTPUT_DIR, "{genome}/{genome}_genomic.gff.gz").format(genome=genome) for genome in df["genome"]]
 
-promoter_files = []
+parts_files = []
 parts = list(config["agat"]["extract_sequences"].keys())
 parts.remove("reference_feature")
 ref_feature = config["agat"]["extract_sequences"]["reference_feature"]
@@ -35,10 +35,15 @@ ref_feature = config["agat"]["extract_sequences"]["reference_feature"]
 for genome in df["genome"]:
     for part in parts:
         if part:
-            promoter_files.append(os.path.join(OUTPUT_DIR, "{genome}/{genome}_{ref_feature}.{part}.fa").format(genome=genome, ref_feature=ref_feature, part=part))
+            parts_files.append(os.path.join(OUTPUT_DIR, "{genome}/{genome}_{ref_feature}.{part}.fa").format(genome=genome, ref_feature=ref_feature, part=part))
 
+parts_files_filtered = []
+for file in parts_files:
+    parts_files_filtered.append(f'{file}_filtered')
 
-#promoter_files = [os.path.join(OUTPUT_DIR, "{genome}/{genome}_promoters.fa").format(genome=genome) for genome in df["genome"]]
+print(parts_files_filtered)
+
+#parts_files = [os.path.join(OUTPUT_DIR, "{genome}/{genome}_promoters.fa").format(genome=genome) for genome in df["genome"]]
 
 
 # Print the list of input files to debug
@@ -51,14 +56,14 @@ for file in gff_files:
     print(file)
 
 print("List of promoter files:")
-for file in promoter_files:
+for file in parts_files:
     print(file)
 
 
 # Define the rule to download the files
 rule all:
      input:
-        genomic_files + gff_files + promoter_files
+        parts_files_filtered
 
 # Define the rule to download genomic files
 rule download_genomic:
@@ -76,7 +81,7 @@ rule download_gff:
     params:
         link=lambda wildcards: get_ftp_link(wildcards.genome, "genomic.gff")
     output:
-        "{OUTPUT_DIR}/{genome}/{genome}_genomic.gff.gz"
+        temp("{OUTPUT_DIR}/{genome}/{genome}_genomic.gff.gz")
     resources:
         download=1
     shell:
@@ -111,12 +116,12 @@ rule fix_gff:
     
 
 # extracting regions using AGAT
-rule extract_seqs:
+rule extract_parts:
     input:
         gff="{OUTPUT_DIR}/{genome}/{genome}_fixed.gff",
         fna="{OUTPUT_DIR}/{genome}/{genome}_genomic.fna"
     output:
-        file="{OUTPUT_DIR}/{genome}/{genome}_{ref_feature}.{part}.fa"
+        file=temp("{OUTPUT_DIR}/{genome}/{genome}_{ref_feature}.{part}.fa")
     params:
         docker=config["agat"]["docker"],
         dockervol = "/data",
@@ -143,3 +148,10 @@ rule extract_seqs:
         shell(c)  
 
 
+rule filter_fasta:
+    input:
+        parts_files
+    output:
+        parts_files_filtered
+    shell:
+        "echo {output}; python workflow/scripts/merge_fasta.py {input}"
