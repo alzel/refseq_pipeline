@@ -63,6 +63,7 @@ assembly_summary %>% filter(annotation_provider %in% c("NCBI RefSeq"), group == 
 
 ```
 
+
 ```{r}
 
 assembly_summary %>% filter(group == "bacteria") %>% 
@@ -76,3 +77,10 @@ assembly_summary %>% filter(group == "archaea") %>%
 
 ```
 
+
+```{r save_test}
+assembly_summary %>% filter(assembly_accession == "GCF_000146045.2") %>% 
+  select(assembly_accession, genome, ftp_path, group) %>%
+  write_csv("../config/lints_test.csv")
+
+```

@@ -5,10 +5,11 @@ output_dir: results/fungi
 
 agat:
   docker: quay.io/biocontainers/agat:1.4.0--pl5321hdfd78af_0
+  singularity: docker://quay.io/biocontainers/agat:1.4.0--pl5321hdfd78af_0
   extract_sequences:
     reference_feature: mRNA
-    upstream: 500 #promoter length
-    downstream: 500 #terminator length
-    five_prime_UTR: True
-    three_prime_UTR: True
+    upstream: 1000 #promoter length
+    downstream: 1000 #terminator length
+    #five_prime_UTR: True
+    #three_prime_UTR: True
     CDS: True
