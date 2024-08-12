@@ -9,4 +9,4 @@ tmp/**
 *.Rproj
 *.Rproj.user
 *.Rproj.user/**
-
+.DS_Store
