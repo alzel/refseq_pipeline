@@ -109,9 +109,11 @@ rule fix_gff:
         dockervol = "/data"
     singularity:
         config["agat"]["singularity"]
+    log:
+        "{OUTPUT_DIR}/{genome}/{genome}_fixed.log"
     shell:
         """
-        agat_convert_sp_gff2gtf.pl --gff {input.gff} --out {output.fixed_gff}
+        agat_convert_sp_gff2gtf.pl --gff {input.gff} --out {output.fixed_gff} -v 0 1> {log}; 
         """
     
 
@@ -126,25 +128,26 @@ rule extract_parts:
         docker=config["agat"]["docker"],
         dockervol = "/data",
         singularity=config["agat"]["singularity"]
-    
+    log:
+        "{OUTPUT_DIR}/{genome}/{genome}_{ref_feature}.{part}.log"
     run:
         c = ""
         match wildcards.part:
                 case "upstream":
                     #c = f"docker run -v {CWD}:{params.dockervol} {params.docker} agat_sp_extract_sequences.pl --gff {params.dockervol}/{input.gff} --fasta {params.dockervol}/{input.fna}  --type {ref_feature} -eo --upstream {config['agat']['extract_sequences']['upstream']} --out {params.dockervol}/{OUTPUT_DIR}/{genome}/{genome}_{ref_feature}.{wildcards.part}.fa"
-                    c = f"singularity exec {params.singularity} agat_sp_extract_sequences.pl --gff {input.gff} --fasta {input.fna}  --type {ref_feature} -eo --upstream {config['agat']['extract_sequences']['upstream']} --out {OUTPUT_DIR}/{genome}/{genome}_{ref_feature}.{wildcards.part}.fa"
+                    c = f"singularity exec {params.singularity} agat_sp_extract_sequences.pl --gff {input.gff} --fasta {input.fna}  --type {ref_feature} -eo --upstream {config['agat']['extract_sequences']['upstream']} --out {OUTPUT_DIR}/{genome}/{genome}_{ref_feature}.{wildcards.part}.fa 1> {log}" 
                 case "downstream":
                     #c = f"docker run -v {CWD}:{params.dockervol} {params.docker} agat_sp_extract_sequences.pl --gff {params.dockervol}/{input.gff} --fasta {params.dockervol}/{input.fna}  --type {ref_feature} -eo --downstream {config['agat']['extract_sequences']['downstream']} --out {params.dockervol}/{OUTPUT_DIR}/{genome}/{genome}_{ref_feature}.{wildcards.part}.fa" 
-                    c = f"singularity exec {params.singularity} agat_sp_extract_sequences.pl --gff {input.gff} --fasta {input.fna} --type {ref_feature} -eo --downstream {config['agat']['extract_sequences']['downstream']} --out {OUTPUT_DIR}/{genome}/{genome}_{ref_feature}.{wildcards.part}.fa" 
+                    c = f"singularity exec {params.singularity} agat_sp_extract_sequences.pl --gff {input.gff} --fasta {input.fna} --type {ref_feature} -eo --downstream {config['agat']['extract_sequences']['downstream']} --out {OUTPUT_DIR}/{genome}/{genome}_{ref_feature}.{wildcards.part}.fa 1> {log}" 
                 case "five_prime_UTR":
                     #c = f"docker run -v {CWD}:{params.dockervol} {params.docker} agat_sp_extract_sequences.pl --gff {params.dockervol}/{input.gff} --fasta {params.dockervol}/{input.fna}  --type {wildcards.part} --out {params.dockervol}/{OUTPUT_DIR}/{genome}/{genome}_{ref_feature}.{wildcards.part}.fa"
-                    c = f"singularity exec {params.singularity} agat_sp_extract_sequences.pl --gff {input.gff} --fasta {input.fna} --type {wildcards.part} --out {OUTPUT_DIR}/{genome}/{genome}_{ref_feature}.{wildcards.part}.fa"
+                    c = f"singularity exec {params.singularity} agat_sp_extract_sequences.pl --gff {input.gff} --fasta {input.fna} --type {wildcards.part} --out {OUTPUT_DIR}/{genome}/{genome}_{ref_feature}.{wildcards.part}.fa 1> {log}"
                 case "three_prime_UTR":
                     #c = f"docker run -v {CWD}:{params.dockervol} {params.docker} agat_sp_extract_sequences.pl --gff {params.dockervol}/{input.gff} --fasta {params.dockervol}/{input.fna}  --type {wildcards.part} --out {params.dockervol}/{OUTPUT_DIR}/{genome}/{genome}_{ref_feature}.{wildcards.part}.fa"
-                    c = f"singularity exec {params.singularity} agat_sp_extract_sequences.pl --gff {input.gff} --fasta {input.fna} --type {wildcards.part} --out {OUTPUT_DIR}/{genome}/{genome}_{ref_feature}.{wildcards.part}.fa"
+                    c = f"singularity exec {params.singularity} agat_sp_extract_sequences.pl --gff {input.gff} --fasta {input.fna} --type {wildcards.part} --out {OUTPUT_DIR}/{genome}/{genome}_{ref_feature}.{wildcards.part}.fa 1> {log}"
                 case "CDS":
                     #c = f"docker run -v {CWD}:{params.dockervol} {params.docker} agat_sp_extract_sequences.pl --gff {params.dockervol}/{input.gff} --fasta {params.dockervol}/{input.fna}  --type {wildcards.part} --out {params.dockervol}/{OUTPUT_DIR}/{genome}/{genome}_{ref_feature}.{wildcards.part}.fa"
-                    c = f"singularity exec {params.singularity} agat_sp_extract_sequences.pl --gff {input.gff} --fasta {input.fna} --type {wildcards.part} --out {OUTPUT_DIR}/{genome}/{genome}_{ref_feature}.{wildcards.part}.fa"
+                    c = f"singularity exec {params.singularity} agat_sp_extract_sequences.pl --gff {input.gff} --fasta {input.fna} --type {wildcards.part} --out {OUTPUT_DIR}/{genome}/{genome}_{ref_feature}.{wildcards.part}.fa 1> {log}"
         shell(c)  
 
 

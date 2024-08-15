@@ -40,24 +40,27 @@ assembly_summary %>% mutate(genome = paste(assembly_accession, str_replace_all(a
 assembly_summary %>% group_by(annotation_provider, group) %>% count %>% arrange(-n)
 ```
 
+```{r}
+selected_vars <- c("assembly_accession", "genome", "organism_name", "ftp_path", "group", "taxid", "species_taxid", "refseq_category", "annotation_provider")
+```
 
 ```{r}
-assembly_summary %>% filter(annotation_provider %in% c("NCBI RefSeq", "DOE Joint Genome Institute", "Broad Institute", "Aalborg University", "JGI", "Cornell University", "Uppsala University" ), group == "fungi") %>% 
-  select(assembly_accession, genome, ftp_path, group)  %>%
+assembly_summary %>% filter(group == "fungi") %>% 
+  select(any_of(selected_vars))  %>%
   write_csv("../config/links_fungi_all.csv")
 ```
 
 ```{r}
 
 assembly_summary %>% filter(annotation_provider %in% c("NCBI RefSeq"), group == "vertebrate_mammalian") %>% 
-  select(assembly_accession, genome, ftp_path, group)  %>%
+  select(any_of(selected_vars))  %>%
   write_csv("../config/links_vertebrate_mammalian_all.csv")
 
 ```
 
 ```{r}
 assembly_summary %>% filter(annotation_provider %in% c("NCBI RefSeq"), group == "plant") %>% 
-  select(assembly_accession, genome, ftp_path, group)  %>%
+  select(any_of(selected_vars))  %>%
   write_csv("../config/links_plant_all.csv")
 
 
@@ -67,11 +70,11 @@ assembly_summary %>% filter(annotation_provider %in% c("NCBI RefSeq"), group == 
 ```{r}
 
 assembly_summary %>% filter(group == "bacteria") %>% 
-  select(assembly_accession, genome, ftp_path, group)  %>%
+  select(any_of(selected_vars))  %>%
   write_csv("../config/links_bacteria_all.csv")
 
 assembly_summary %>% filter(group == "archaea") %>% 
-  select(assembly_accession, genome, ftp_path, group)  %>%
+  select(any_of(selected_vars))  %>%
   write_csv("../config/links_archaea_all.csv")
 
 
