@@ -1,11 +1,11 @@
-genomes: config/links_test.csv
+genomes: config/links_fungi_test.csv
 
 #"results" directory is the convention in snakemake pipelines, don't change
 output_dir: results/fungi
 
 agat:
   docker: quay.io/biocontainers/agat:1.4.0--pl5321hdfd78af_0
-  singularity: docker://quay.io/biocontainers/agat:1.4.0--pl5321hdfd78af_0
+  singularity: agat_1.4.0--pl5321hdfd78af_0.sif
   extract_sequences:
     reference_feature: mRNA
     upstream: 1000 #promoter length

@@ -1,0 +1,4 @@
+assembly_accession,genome,organism_name,ftp_path,group,taxid,species_taxid,refseq_category,annotation_provider
+GCF_000150035.1,GCF_000150035.1_ASM15003v1,Vanderwaltozyma polyspora DSM 70294,https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/150/035/GCF_000150035.1_ASM15003v1,fungi,436907,36033,representative genome,"Trinity College Dublin, Ireland"
+GCF_000151355.1,GCF_000151355.1_v2.0,Fusarium vanettenii 77-13-4,https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/151/355/GCF_000151355.1_v2.0,fungi,660122,2747968,representative genome,DOE Joint Genome Institute
+GCF_000027005.1,GCF_000027005.1_ASM2700v1,Komagataella phaffii GS115,https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/027/005/GCF_000027005.1_ASM2700v1,fungi,644223,460519,representative genome,"Unit for Molecular Glycobiology, Department for Molecular Biomedical Research, VIB, UGent, Belgium"rm -
